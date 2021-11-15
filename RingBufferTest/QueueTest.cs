@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RingBufferTest
 {
@@ -58,30 +60,83 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Тест помог мне найти баг в алгоритме
+        /// Нагрузочный тест помог мне найти баг в алгоритме
         /// </summary>
         [TestMethod]
-        public void RandomCalls()
+        public void ShouldRingBufferRunsThreadSafeWithLongQueue()
         {
-            var q = new RingBuffer.Queue<int>(Capacity);
+            var q = new RingBuffer.Queue<int>(20000);
             int result = 0;
             int testNumber = 5;
             Random rnd = new Random();
 
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 10000; i++)
             {
                 int step = rnd.Next(2);
                 if (step == 0)
                 {
+                    Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Enq(testNumber));
+                    Task.Run(() => q.Enq(testNumber));
+                    Task.Run(() => q.Deq(out result));
+                    //Thread.Yield(); // думаю, это бесполезно
                     q.Enq(testNumber);
                 }
                 else
                 {
+                    Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Deq(out result));
+                    Task.Run(() => q.Enq(testNumber));
+                    Task.Run(() => q.Deq(out result));
+                    //Thread.Yield(); // думаю, это бесполезно
                     q.Deq(out result);
                 }
 
             }
 
+            Thread.Sleep(50); // иногда все таски не успевают завершиться
+            q.Deq(out result);
+            q.Deq(out result);
+            q.Deq(out result);
+
+            q.Enq(testNumber);
+            q.Deq(out result);
+
+            Assert.AreEqual(result, testNumber);
+        }
+
+        /// <summary>
+        /// Нагрузочный тест помог мне найти баг в алгоритме
+        /// </summary>
+        [TestMethod]
+        public void ShouldRingBufferRunsThreadSafeWithSmallQueue()
+        {
+            var q = new RingBuffer.Queue<int>(1);
+            int result = 0;
+            int testNumber = 5;
+            Random rnd = new Random();
+
+            for (int i = 0; i < 10000; i++)
+            {
+                int step = rnd.Next(2);
+                if (step == 0)
+                {
+                    Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Enq(testNumber));
+                    Task.Run(() => q.Enq(testNumber));
+                    Task.Run(() => q.Deq(out result));
+                    //Thread.Yield(); // думаю, это бесполезно
+                    q.Enq(testNumber);
+                }
+                else
+                {
+                    Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Deq(out result));
+                    Task.Run(() => q.Enq(testNumber));
+                    Task.Run(() => q.Deq(out result));
+                    //Thread.Yield(); // думаю, это бесполезно
+                    q.Deq(out result);
+                }
+
+            }
+
+            Thread.Sleep(50); // иногда все таски не успевают завершиться
             q.Deq(out result);
             q.Deq(out result);
             q.Deq(out result);
