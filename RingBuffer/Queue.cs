@@ -11,7 +11,7 @@ namespace RingBuffer
     /// <typeparam name="T">Тип хранимых данных</typeparam>
     public class Queue<T>
     {
-        private static int usingResource = 0;
+        private static int _usingResource = 0;
         private readonly T[] _array;
         private readonly int _capacity;
         private int _head = 0;
@@ -31,7 +31,7 @@ namespace RingBuffer
             bool result = false;
 
             //lock (_array)
-            if (0 == Interlocked.Exchange(ref usingResource, 1))
+            if (0 == Interlocked.Exchange(ref _usingResource, 1))
             {
                 if (_size != _capacity)
                 {
@@ -42,7 +42,7 @@ namespace RingBuffer
                     result = true;
                 }
 
-                Interlocked.Exchange(ref usingResource, 0);
+                Interlocked.Exchange(ref _usingResource, 0);
             }
 
             return result;
@@ -57,7 +57,7 @@ namespace RingBuffer
             bool result = false;
 
             //lock (_array)
-            if (0 == Interlocked.Exchange(ref usingResource, 1))
+            if (0 == Interlocked.Exchange(ref _usingResource, 1))
             {
                 if (_size != 0)
                 {
@@ -68,7 +68,7 @@ namespace RingBuffer
                     result = true;
                 }
 
-                Interlocked.Exchange(ref usingResource, 0);
+                Interlocked.Exchange(ref _usingResource, 0);
             }
 
             return result;
