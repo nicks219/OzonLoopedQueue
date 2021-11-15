@@ -15,6 +15,27 @@ namespace RingBufferTest
         private string str3 = "C";
 
         [TestMethod]
+        public void ShouldThrowException()
+        {
+            Assert.ThrowsException<ArgumentException>(() => new RingBuffer.Queue<string>(0));
+        }
+
+        [TestMethod]
+
+        public void ShouldWorkOneElementCapacityQueue()
+        {
+            var q = new RingBuffer.Queue<string>(1);
+            string result = string.Empty;
+            q.Enq(str1);
+            q.Enq(str2);
+            q.Deq(out result);
+            Assert.AreEqual(result, str1);
+
+            q.Deq(out result);
+            Assert.AreEqual(result, default(string));
+        }
+
+        [TestMethod]
         public void ShouldEnqueueCorrectrly()
         {
             var q = new RingBuffer.Queue<string>(Capacity);
@@ -60,7 +81,7 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Нагрузочный тест помог мне найти баг в алгоритме
+        /// Самоденльный нагрузочный тест
         /// </summary>
         [TestMethod]
         public void ShouldRingBufferRunsThreadSafeWithLongQueue()
@@ -104,7 +125,7 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Нагрузочный тест помог мне найти баг в алгоритме
+        /// Самоденльный нагрузочный тест
         /// </summary>
         [TestMethod]
         public void ShouldRingBufferRunsThreadSafeWithSmallQueue()
