@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LoopedQueue\LoopedQueue.csproj" />
+    <ProjectReference Include="..\RingBuffer\RingBuffer.csproj" />
   </ItemGroup>
 
 </Project>

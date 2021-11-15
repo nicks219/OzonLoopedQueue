@@ -1,15 +1,15 @@
 ﻿using System.Linq;
 
-namespace LoopedQueue
+namespace RingBuffer
 {
     // Кольцевой буфер. Очередь (FIFO) на массиве фиксированного размера.
     public class Queue<T>
     {
         private readonly T[] _array;
         private readonly int _capacity;
-        private int _first = 0;
-        private int _last = 0;
-        private int _count = 0;
+        private int _head = 0;
+        private int _tail = 0;
+        private int _size = 0;
 
         public Queue(int capacity)
         {
@@ -21,16 +21,16 @@ namespace LoopedQueue
         // `true` если удалось добавить элемент в очередь (ещё осталось место). В противном случае `false`
         public bool Enq(T item)
         {
-            int previousIndex = _last;
+            int previousIndex = _tail;
 
-            if (_count == _capacity)
+            if (_size == _capacity)
             {
                 return false;
             }
 
-            _last = (++_last) % _capacity;
+            _tail = (++_tail) % _capacity;
             _array[previousIndex] = item;
-            _count++;
+            _size++;
 
             return true;
         }
@@ -42,15 +42,15 @@ namespace LoopedQueue
         {
             item = default(T);
 
-            if (_count == 0)
+            if (_size == 0)
             {
                 return false;
             }
 
-            item = _array[_first];
-            _array[_first] = default(T);
-            _first = (++_first) % _capacity;
-            _count--;
+            item = _array[_head];
+            _array[_head] = default(T);
+            _head = (++_head) % _capacity;
+            _size--;
 
             return true;
         }
