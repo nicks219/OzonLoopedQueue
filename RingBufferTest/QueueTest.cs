@@ -1,4 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+п»їusing Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 
@@ -58,7 +58,7 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Тест помог мне найти баг в алгоритме
+        /// РўРµСЃС‚ РїРѕРјРѕРі РјРЅРµ РЅР°Р№С‚Рё Р±Р°Рі РІ Р°Р»РіРѕСЂРёС‚РјРµ
         /// </summary>
         [TestMethod]
         public void RandomCalls()
@@ -93,7 +93,7 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Воспроизведение ситуации, в которой появлялась ошибка
+        /// Р’РѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёРµ СЃРёС‚СѓР°С†РёРё, РІ РєРѕС‚РѕСЂРѕР№ РїРѕСЏРІР»СЏР»Р°СЃСЊ РѕС€РёР±РєР°
         /// </summary>
         [TestMethod]
         public void CoolTest()
