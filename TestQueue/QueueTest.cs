@@ -1,9 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Threading;
 
 namespace TestQueue
 {
@@ -18,7 +15,7 @@ namespace TestQueue
         [TestMethod]
         public void ShouldEnqueueCorrectrly()
         {
-            var q = new CircleQueue.Queue<string>(Capacity);
+            var q = new LoopedQueue.Queue<string>(Capacity);
 
             Assert.IsTrue(q.Enq(str1)); // true; A - -
             Assert.IsTrue(q.Enq(str2)); // true; A B -
@@ -33,7 +30,7 @@ namespace TestQueue
         [TestMethod]
         public void ShouldDequeueCorrectrly()
         {
-            var q = new CircleQueue.Queue<string>(Capacity);
+            var q = new LoopedQueue.Queue<string>(Capacity);
             string result = string.Empty;
             string empty = default(string);
 
@@ -42,14 +39,18 @@ namespace TestQueue
             Assert.IsFalse(q.Deq(out result));
             Assert.IsFalse(q.Deq(out result));
 
+            
             Assert.IsTrue(q.Enq(str1)); // true; A - -
             Assert.IsTrue(q.Enq(str2)); // true; A B -
+            Assert.IsTrue(q.Enq(null)); // true: A B x
+            Assert.IsFalse(q.Enq(str3)); // false
 
-            Assert.IsTrue(q.Deq(out result)); // true; (A) B -
+            Assert.IsTrue(q.Deq(out result)); // true; (A) B x
             Assert.AreEqual(result, str1);
-            Assert.IsTrue(q.Deq(out result)); // true; - (B) -
+            Assert.IsTrue(q.Deq(out result)); // true; - (B) x
             Assert.AreEqual(result, str2);
-
+            Assert.IsTrue(q.Deq(out result)); // true; - - (x)
+            Assert.AreEqual(result, null);
             Assert.IsFalse(q.Deq(out result)); // false; - - -
 
             q.GetQueueCopy().ToList().ForEach(a => Console.WriteLine(a));
@@ -62,7 +63,7 @@ namespace TestQueue
         [TestMethod]
         public void RandomCalls()
         {
-            var q = new CircleQueue.Queue<int>(Capacity);
+            var q = new LoopedQueue.Queue<int>(Capacity);
             int result = 0;
             int testNumber = 5;
             Random rnd = new Random();
@@ -78,6 +79,7 @@ namespace TestQueue
                 {
                     q.Deq(out result);
                 }
+
             }
 
             q.Deq(out result);
@@ -96,7 +98,7 @@ namespace TestQueue
         [TestMethod]
         public void CoolTest()
         {
-            var q = new CircleQueue.Queue<string>(Capacity);
+            var q = new LoopedQueue.Queue<string>(Capacity);
             string result = string.Empty;
             q.Enq(str1);
             q.Enq(str1);

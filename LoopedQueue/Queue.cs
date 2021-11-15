@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace CircleQueue
+namespace LoopedQueue
 {
     // Кольцевой буфер. Очередь (FIFO) на массиве фиксированного размера.
     public class Queue<T>
@@ -28,12 +28,9 @@ namespace CircleQueue
                 return false;
             }
 
-            lock (_array)
-            {
-                _last = (++_last) % _capacity;
-                _array[previousIndex] = item;
-                _count++;
-            }
+            _last = (++_last) % _capacity;
+            _array[previousIndex] = item;
+            _count++;
 
             return true;
         }
@@ -44,6 +41,7 @@ namespace CircleQueue
         public bool Deq(out T item)
         {
             item = default(T);
+
             if (_count == 0)
             {
                 return false;
@@ -63,8 +61,8 @@ namespace CircleQueue
         /// <returns>Queue в виде копии внутреннего массива</returns>
         public T[] GetQueueCopy()
         {
-            T[] newarray = _array.ToArray();
-            return newarray;
+            T[] newArray = _array.ToArray();
+            return newArray;
         }
     }
 }

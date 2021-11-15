@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31402.337
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CircleQueue", "ConsoleApp1\CircleQueue.csproj", "{66505ACC-3799-4B8E-9BC7-B76F66D5D4D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoopedQueue", "LoopedQueue\LoopedQueue.csproj", "{66505ACC-3799-4B8E-9BC7-B76F66D5D4D2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestQueue", "TestQueue\TestQueue.csproj", "{E7A7A6D3-AD7A-447C-9380-D75B32F7707B}"
 EndProject

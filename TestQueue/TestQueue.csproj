@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ConsoleApp1\CircleQueue.csproj" />
+    <ProjectReference Include="..\LoopedQueue\LoopedQueue.csproj" />
   </ItemGroup>
 
 </Project>
