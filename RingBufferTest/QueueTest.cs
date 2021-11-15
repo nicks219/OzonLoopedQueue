@@ -5,7 +5,7 @@ using System.Linq;
 namespace RingBufferTest
 {
     [TestClass]
-    public class RingBufferTest
+    public class QueueTest
     {
         private const int Capacity = 3;
         private string str1 = "A";
@@ -15,7 +15,7 @@ namespace RingBufferTest
         [TestMethod]
         public void ShouldEnqueueCorrectrly()
         {
-            var q = new RingBuffer.RingBuffer<string>(Capacity);
+            var q = new RingBuffer.Queue<string>(Capacity);
 
             Assert.IsTrue(q.Enq(str1)); // true; A - -
             Assert.IsTrue(q.Enq(str2)); // true; A B -
@@ -30,7 +30,7 @@ namespace RingBufferTest
         [TestMethod]
         public void ShouldDequeueCorrectrly()
         {
-            var q = new RingBuffer.RingBuffer<string>(Capacity);
+            var q = new RingBuffer.Queue<string>(Capacity);
             string result = string.Empty;
             string empty = default(string);
 
@@ -63,7 +63,7 @@ namespace RingBufferTest
         [TestMethod]
         public void RandomCalls()
         {
-            var q = new RingBuffer.RingBuffer<int>(Capacity);
+            var q = new RingBuffer.Queue<int>(Capacity);
             int result = 0;
             int testNumber = 5;
             Random rnd = new Random();
@@ -98,7 +98,7 @@ namespace RingBufferTest
         [TestMethod]
         public void CoolTest()
         {
-            var q = new RingBuffer.RingBuffer<string>(Capacity);
+            var q = new RingBuffer.Queue<string>(Capacity);
             string result = string.Empty;
             q.Enq(str1);
             q.Enq(str1);

@@ -3,7 +3,7 @@
 namespace RingBuffer
 {
     // Кольцевой буфер. Очередь (FIFO) на массиве фиксированного размера.
-    public class RingBuffer<T>
+    public class Queue<T>
     {
         private readonly T[] _array;
         private readonly int _capacity;
@@ -11,7 +11,7 @@ namespace RingBuffer
         private int _tail = 0;
         private int _size = 0;
 
-        public RingBuffer(int capacity)
+        public Queue(int capacity)
         {
             _array = new T[capacity];
             _capacity = capacity;
