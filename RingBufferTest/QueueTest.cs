@@ -1,4 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+п»їusing Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 using System.Threading;
@@ -60,7 +60,7 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Нагрузочный тест помог мне найти баг в алгоритме
+        /// РќР°РіСЂСѓР·РѕС‡РЅС‹Р№ С‚РµСЃС‚ РїРѕРјРѕРі РјРЅРµ РЅР°Р№С‚Рё Р±Р°Рі РІ Р°Р»РіРѕСЂРёС‚РјРµ
         /// </summary>
         [TestMethod]
         public void ShouldRingBufferRunsThreadSafeWithLongQueue()
@@ -78,7 +78,7 @@ namespace RingBufferTest
                     Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Enq(testNumber));
                     Task.Run(() => q.Enq(testNumber));
                     Task.Run(() => q.Deq(out result));
-                    //Thread.Yield(); // думаю, это бесполезно
+                    //Thread.Yield(); // РґСѓРјР°СЋ, СЌС‚Рѕ Р±РµСЃРїРѕР»РµР·РЅРѕ
                     q.Enq(testNumber);
                 }
                 else
@@ -86,13 +86,13 @@ namespace RingBufferTest
                     Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Deq(out result));
                     Task.Run(() => q.Enq(testNumber));
                     Task.Run(() => q.Deq(out result));
-                    //Thread.Yield(); // думаю, это бесполезно
+                    //Thread.Yield(); // РґСѓРјР°СЋ, СЌС‚Рѕ Р±РµСЃРїРѕР»РµР·РЅРѕ
                     q.Deq(out result);
                 }
 
             }
 
-            Thread.Sleep(50); // иногда все таски не успевают завершиться
+            Thread.Sleep(50); // РёРЅРѕРіРґР° РІСЃРµ С‚Р°СЃРєРё РЅРµ СѓСЃРїРµРІР°СЋС‚ Р·Р°РІРµСЂС€РёС‚СЊСЃСЏ
             q.Deq(out result);
             q.Deq(out result);
             q.Deq(out result);
@@ -104,7 +104,7 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Нагрузочный тест помог мне найти баг в алгоритме
+        /// РќР°РіСЂСѓР·РѕС‡РЅС‹Р№ С‚РµСЃС‚ РїРѕРјРѕРі РјРЅРµ РЅР°Р№С‚Рё Р±Р°Рі РІ Р°Р»РіРѕСЂРёС‚РјРµ
         /// </summary>
         [TestMethod]
         public void ShouldRingBufferRunsThreadSafeWithSmallQueue()
@@ -122,7 +122,7 @@ namespace RingBufferTest
                     Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Enq(testNumber));
                     Task.Run(() => q.Enq(testNumber));
                     Task.Run(() => q.Deq(out result));
-                    //Thread.Yield(); // думаю, это бесполезно
+                    //Thread.Yield(); // РґСѓРјР°СЋ, СЌС‚Рѕ Р±РµСЃРїРѕР»РµР·РЅРѕ
                     q.Enq(testNumber);
                 }
                 else
@@ -130,13 +130,13 @@ namespace RingBufferTest
                     Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Deq(out result));
                     Task.Run(() => q.Enq(testNumber));
                     Task.Run(() => q.Deq(out result));
-                    //Thread.Yield(); // думаю, это бесполезно
+                    //Thread.Yield(); // РґСѓРјР°СЋ, СЌС‚Рѕ Р±РµСЃРїРѕР»РµР·РЅРѕ
                     q.Deq(out result);
                 }
 
             }
 
-            Thread.Sleep(50); // иногда все таски не успевают завершиться
+            Thread.Sleep(50); // РёРЅРѕРіРґР° РІСЃРµ С‚Р°СЃРєРё РЅРµ СѓСЃРїРµРІР°СЋС‚ Р·Р°РІРµСЂС€РёС‚СЊСЃСЏ
             q.Deq(out result);
             q.Deq(out result);
             q.Deq(out result);
@@ -148,7 +148,7 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Воспроизведение ситуации, в которой появлялась ошибка
+        /// Р’РѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёРµ СЃРёС‚СѓР°С†РёРё, РІ РєРѕС‚РѕСЂРѕР№ РїРѕСЏРІР»СЏР»Р°СЃСЊ РѕС€РёР±РєР°
         /// </summary>
         [TestMethod]
         public void CoolTest()
