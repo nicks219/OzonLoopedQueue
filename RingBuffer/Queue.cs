@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 namespace RingBuffer
 {
@@ -13,6 +14,8 @@ namespace RingBuffer
 
         public Queue(int capacity)
         {
+            if (capacity <= 0) throw new ArgumentException("Capacity must be more than zero.");
+
             _array = new T[capacity];
             _capacity = capacity;
         }
