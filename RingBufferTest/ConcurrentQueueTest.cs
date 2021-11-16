@@ -18,6 +18,7 @@ namespace RingBuffer
         private readonly string str1 = "A";
         private readonly string str2 = "B";
         private readonly string str3 = "C";
+        private readonly List<Task> taskList = new();
 
         [TestMethod]
         public void ShouldThrowException()
@@ -97,13 +98,16 @@ namespace RingBuffer
             int result = 0;
             int number = 5;
             Random rnd = new();
+            taskList.Clear();
 
             for (int i = 0; i < TEST_COUNT; i++)
             {
-                Task.Run(() => { for (int i = 0; i < TEST_COUNT / 20; i++) { stack.Push(cq.TryEnq(number)); } });
-                Task.Run(() => { for (int i = 0; i < TEST_COUNT / 20; i++) { stack.Push(cq.TryDeq(out result)); } });
+                taskList.Add(Task.Run(() => { for (int i = 0; i < TEST_COUNT / 20; i++) { stack.Push(cq.TryEnq(number)); } }));
+                taskList.Add(Task.Run(() => { for (int i = 0; i < TEST_COUNT / 20; i++) { stack.Push(cq.TryDeq(out result)); } }));
                 stack.Push(Task.Run(() => cq.TryEnq(number)).Result);
             }
+
+            taskList.ForEach(t => t.GetAwaiter().GetResult());
 
             var falls = stack.Any(a => a == false);
             var fallsCount = stack.Count(a => a == false);
@@ -128,13 +132,16 @@ namespace RingBuffer
             int result = 0;
             int number = 5;
             Random rnd = new();
+            taskList.Clear();
 
             for (int i = 0; i < TEST_COUNT; i++)
             {
-                Task.Run(() => { for (int i = 0; i < TEST_COUNT / 20; i++) { stack.Push(cq.TryEnq(number)); } });
-                Task.Run(() => { for (int i = 0; i < TEST_COUNT / 20; i++) { stack.Push(cq.TryDeq(out result)); } });
+                taskList.Add(Task.Run(() => { for (int i = 0; i < TEST_COUNT / 20; i++) { stack.Push(cq.TryEnq(number)); } }));
+                taskList.Add(Task.Run(() => { for (int i = 0; i < TEST_COUNT / 20; i++) { stack.Push(cq.TryDeq(out result)); } }));
                 stack.Push(Task.Run(() => cq.TryEnq(number)).Result);
             }
+
+            taskList.ForEach(t => t.GetAwaiter().GetResult());
 
             var falls = stack.Any(a => a == false);
             var fallsCount = stack.Count(a => a == false);
@@ -160,14 +167,17 @@ namespace RingBuffer
             int result = 0;
             int number = 5;
             Random rnd = new();
+            taskList.Clear();
 
             for (int i = 0; i < TEST_COUNT; i++)
             {
-                Task.Run(() => { for (int i = 0; i < TEST_COUNT / 5; i++) { stack.Push(cq.TryEnq(number)); } });
-                Task.Run(() => { for (int i = 0; i < TEST_COUNT / 10; i++) { stack.Push(cq.TryDeq(out result)); } });
+                taskList.Add(Task.Run(() => { for (int i = 0; i < TEST_COUNT / 5; i++) { stack.Push(cq.TryEnq(number)); } }));
+                taskList.Add(Task.Run(() => { for (int i = 0; i < TEST_COUNT / 10; i++) { stack.Push(cq.TryDeq(out result)); } }));
                 stack.Push(Task.Run(() => cq.TryEnq(number)).Result);
                 stack2.Push(Task.Run(() => cq.TryEnq(number)).Result);
             }
+
+            taskList.ForEach(t => t.GetAwaiter().GetResult());
 
             var falls = stack.Any(a => a == false);
             var fallsCount = stack.Count(a => a == false);
@@ -177,9 +187,6 @@ namespace RingBuffer
             Assert.IsTrue(falls);
             Assert.IsTrue(stack2.Any(a => a == true));
             Assert.IsTrue(stack2.Any(a => a == false));
-
-            // ждем завершения всех Tasks и проверяем простейшую операцию
-            Thread.Sleep(50);
 
             cq.TryDeq(out result);
             cq.TryDeq(out result);
