@@ -12,7 +12,7 @@ namespace RingBuffer
     /// <typeparam name="T">Тип хранимых данных</typeparam>
     public class Queue<T>
     {
-        private static int _usingResource = 0;
+        private int _usingResource = 0;
         private readonly T[] _array;
         private readonly int _capacity;
         private int _head = 0;
