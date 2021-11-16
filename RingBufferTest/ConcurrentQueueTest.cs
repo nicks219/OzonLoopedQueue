@@ -3,7 +3,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace RingBuffer
@@ -23,7 +22,26 @@ namespace RingBuffer
         [TestMethod]
         public void ShouldThrowException()
         {
-            Assert.ThrowsException<ArgumentException>(() => new ConcurrentQueue<string>(null));
+            Assert.ThrowsException<NullReferenceException>(() => new ConcurrentQueue<string>(null));
+        }
+
+        [TestMethod]
+
+        public void ShouldConcurrentQueueIndependentOfQueue()
+        {
+            var q = new Queue<string>(SMALL_CAPACITY);
+            var cq = new ConcurrentQueue<string>(q);
+
+            cq.TryEnq(str1);
+            cq.TryEnq(str2);
+            q.Deq(out string result2);
+            q = null;
+            cq.TryDeq(out string result);
+
+            Assert.AreEqual(result, str1);
+
+            cq.TryDeq(out result);
+            Assert.AreEqual(result, default);
         }
 
         [TestMethod]
@@ -32,9 +50,11 @@ namespace RingBuffer
         {
             var q = new Queue<string>(SMALL_CAPACITY);
             var cq = new ConcurrentQueue<string>(q);
+            
             cq.TryEnq(str1);
             cq.TryEnq(str2);
             cq.TryDeq(out string result);
+            
             Assert.AreEqual(result, str1);
 
             cq.TryDeq(out result);
