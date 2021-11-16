@@ -1,18 +1,11 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
 
 namespace RingBuffer
 {
     // Кольцевой буфер. Очередь (FIFO) на массиве фиксированного размера.
-
-    /// <summary>
-    /// Неблокирующий потокобезопасный кольцевой буффер
-    /// </summary>
-    /// <typeparam name="T">Тип хранимых данных</typeparam>
     public class Queue<T>
     {
-        private int _usingResource = 0;
         private readonly T[] _array;
         private readonly int _capacity;
         private int _head = 0;
@@ -21,7 +14,7 @@ namespace RingBuffer
 
         public Queue(int capacity)
         {
-            if (capacity <= 0) throw new ArgumentException("Capacity must be greater than zero.");
+            if (capacity <= 0) throw new ArgumentException("Capacity must be more than zero.");
 
             _array = new T[capacity];
             _capacity = capacity;
@@ -31,23 +24,18 @@ namespace RingBuffer
         // `true` если удалось добавить элемент в очередь (ещё осталось место). В противном случае `false`
         public bool Enq(T item)
         {
-            bool result = false;
+            int previousIndex = _tail;
 
-            if (0 == Interlocked.Exchange(ref _usingResource, 1))
+            if (_size == _capacity)
             {
-                if (_size != _capacity)
-                {
-                    int previousIndex = _tail;
-                    _tail = (++_tail) % _capacity;
-                    _array[previousIndex] = item;
-                    _size++;
-                    result = true;
-                }
-
-                Interlocked.Exchange(ref _usingResource, 0);
+                return false;
             }
 
-            return result;
+            _tail = (++_tail) % _capacity;
+            _array[previousIndex] = item;
+            _size++;
+
+            return true;
         }
 
         // Извлечь элемент из массива
@@ -55,24 +43,19 @@ namespace RingBuffer
         // `false` если очередь пуста и возвращать нечего.</returns>
         public bool Deq(out T item)
         {
-            item = default;
-            bool result = false;
+            item = default(T);
 
-            if (0 == Interlocked.Exchange(ref _usingResource, 1))
+            if (_size == 0)
             {
-                if (_size != 0)
-                {
-                    item = _array[_head];
-                    _array[_head] = default;
-                    _head = (++_head) % _capacity;
-                    _size--;
-                    result = true;
-                }
-
-                Interlocked.Exchange(ref _usingResource, 0);
+                return false;
             }
 
-            return result;
+            item = _array[_head];
+            _array[_head] = default(T);
+            _head = (++_head) % _capacity;
+            _size--;
+
+            return true;
         }
 
         /// <summary>

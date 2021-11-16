@@ -1,8 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace RingBufferTest
 {
@@ -10,9 +8,7 @@ namespace RingBufferTest
     public class QueueTest
     {
         private const int CAPACITY = 3;
-        private const int BIG_CAPACITY = 20000;
-        private const int SMALL_CAPACITY = 1;
-        private const int TEST_COUNT = 10000;
+        private const int TEST_COUNT = 1000;
         private readonly string str1 = "A";
         private readonly string str2 = "B";
         private readonly string str3 = "C";
@@ -27,14 +23,14 @@ namespace RingBufferTest
 
         public void ShouldWorkOneElementCapacityQueue()
         {
-            var q = new RingBuffer.Queue<string>(SMALL_CAPACITY);
+            var q = new RingBuffer.Queue<string>(1);
             q.Enq(str1);
             q.Enq(str2);
             q.Deq(out string result);
             Assert.AreEqual(result, str1);
 
             q.Deq(out result);
-            Assert.AreEqual(result, default(string));
+            Assert.AreEqual(result, default);
         }
 
         [TestMethod]
@@ -62,7 +58,6 @@ namespace RingBufferTest
             Assert.IsFalse(q.Deq(out result));
             Assert.IsFalse(q.Deq(out result));
             Assert.IsFalse(q.Deq(out result));
-
             
             Assert.IsTrue(q.Enq(str1));
             Assert.IsTrue(q.Enq(str2));
@@ -82,101 +77,43 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Самодельный нагрузочный тест
+        /// Тест помог найти баг в алгоритме
         /// </summary>
         [TestMethod]
-        public void ShouldRingBufferRunThreadSafe()
+        public void RandomCalls()
         {
-            var q = new RingBuffer.Queue<int>(BIG_CAPACITY);
-            int result = 0;
-            int number = 5;
+            var q = new RingBuffer.Queue<int>(CAPACITY);
+            
             Random rnd = new();
+            int testNumber = rnd.Next(int.MaxValue);
+            int result;
 
             for (int i = 0; i < TEST_COUNT; i++)
             {
                 int step = rnd.Next(2);
                 if (step == 0)
                 {
-                    Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Enq(number));
-                    Task.Run(() => q.Enq(number));
-                    Task.Run(() => q.Deq(out result));
-                    q.Enq(number);
+                    q.Enq(testNumber);
                 }
                 else
                 {
-                    Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Deq(out result));
-                    Task.Run(() => q.Enq(number));
-                    Task.Run(() => q.Deq(out result));
                     q.Deq(out result);
                 }
 
             }
 
-            Assert.IsTrue(q.GetPrivateSizeCopy() <= BIG_CAPACITY);
-            Assert.IsTrue(q.GetPrivateSizeCopy() >= 0);
-
-            // ждем завершения всех Tasks
-            Thread.Sleep(50); 
-
             q.Deq(out result);
             q.Deq(out result);
             q.Deq(out result);
 
-            q.Enq(number);
+            q.Enq(testNumber);
             q.Deq(out result);
 
-            Assert.AreEqual(result, number);
+            Assert.AreEqual(result, testNumber);
         }
 
         /// <summary>
-        /// Самодельный нагрузочный тест
-        /// </summary>
-        [TestMethod]
-        public void ShouldRingBufferRunThreadSafeWithSmallBufferSize()
-        {
-            var q = new RingBuffer.Queue<int>(SMALL_CAPACITY);
-            int result = 0;
-            int number = 5;
-            Random rnd = new();
-
-            for (int i = 0; i < TEST_COUNT; i++)
-            {
-                int step = rnd.Next(2);
-                if (step == 0)
-                {
-                    Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Enq(number));
-                    Task.Run(() => q.Enq(number));
-                    Task.Run(() => q.Deq(out result));
-                    q.Enq(number);
-                }
-                else
-                {
-                    Task.Delay(rnd.Next(10)).GetAwaiter().OnCompleted(() => q.Deq(out result));
-                    Task.Run(() => q.Enq(number));
-                    Task.Run(() => q.Deq(out result));
-                    q.Deq(out result);
-                }
-
-            }
-
-            Assert.IsTrue(q.GetPrivateSizeCopy() <= SMALL_CAPACITY);
-            Assert.IsTrue(q.GetPrivateSizeCopy() >= 0);
-
-            // ждем завершения всех Tasks
-            Thread.Sleep(50); 
-
-            q.Deq(out result);
-            q.Deq(out result);
-            q.Deq(out result);
-
-            q.Enq(number);
-            q.Deq(out result);
-
-            Assert.AreEqual(result, number);
-        }
-
-        /// <summary>
-        /// Воспроизведение ситуации, в которой появлялась ошибка
+        /// Воспроизведение ситуации с багом
         /// </summary>
         [TestMethod]
         public void CoolTest()
