@@ -33,7 +33,6 @@ namespace RingBuffer
         {
             bool result = false;
 
-            //lock (_array)
             if (0 == Interlocked.Exchange(ref _usingResource, 1))
             {
                 if (_size != _capacity)
@@ -56,16 +55,15 @@ namespace RingBuffer
         // `false` если очередь пуста и возвращать нечего.</returns>
         public bool Deq(out T item)
         {
-            item = default(T);
+            item = default;
             bool result = false;
 
-            //lock (_array)
             if (0 == Interlocked.Exchange(ref _usingResource, 1))
             {
                 if (_size != 0)
                 {
                     item = _array[_head];
-                    _array[_head] = default(T);
+                    _array[_head] = default;
                     _head = (++_head) % _capacity;
                     _size--;
                     result = true;
@@ -78,13 +76,22 @@ namespace RingBuffer
         }
 
         /// <summary>
-        /// Метод добавлен исключительно для тестирования
+        /// Метод для тестирования
         /// </summary>
         /// <returns>Queue в виде копии внутреннего массива</returns>
-        public T[] GetQueueCopy()
+        public T[] GetPrivateArrayCopy()
         {
             T[] newArray = _array.ToArray();
             return newArray;
+        }
+
+        /// <summary>
+        /// Метод для тестирования
+        /// </summary>
+        /// <returns> Внутренне поле _size</returns>
+        public int GetPrivateSizeCopy()
+        {
+            return _size;
         }
     }
 }
