@@ -59,10 +59,10 @@ namespace RingBuffer
         }
 
         /// <summary>
-        /// Метод добавлен исключительно для тестирования
+        /// Метод для тестирования
         /// </summary>
         /// <returns>Queue в виде копии внутреннего массива</returns>
-        public T[] GetQueueCopy()
+        public T[] GetPrivateArrayCopy()
         {
             T[] newArray = _array.ToArray();
             return newArray;

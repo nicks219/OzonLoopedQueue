@@ -7,10 +7,11 @@ namespace RingBufferTest
     [TestClass]
     public class QueueTest
     {
-        private const int Capacity = 3;
-        private string str1 = "A";
-        private string str2 = "B";
-        private string str3 = "C";
+        private const int CAPACITY = 3;
+        private const int TEST_COUNT = 1000;
+        private readonly string str1 = "A";
+        private readonly string str2 = "B";
+        private readonly string str3 = "C";
 
         [TestMethod]
         public void ShouldThrowException()
@@ -23,73 +24,71 @@ namespace RingBufferTest
         public void ShouldWorkOneElementCapacityQueue()
         {
             var q = new RingBuffer.Queue<string>(1);
-            string result = string.Empty;
             q.Enq(str1);
             q.Enq(str2);
-            q.Deq(out result);
+            q.Deq(out string result);
             Assert.AreEqual(result, str1);
 
             q.Deq(out result);
-            Assert.AreEqual(result, default(string));
+            Assert.AreEqual(result, default);
         }
 
         [TestMethod]
         public void ShouldEnqueueCorrectrly()
         {
-            var q = new RingBuffer.Queue<string>(Capacity);
+            var q = new RingBuffer.Queue<string>(CAPACITY);
 
-            Assert.IsTrue(q.Enq(str1)); // true; A - -
-            Assert.IsTrue(q.Enq(str2)); // true; A B -
-            Assert.IsTrue(q.Enq(str3)); // true; A B C
-            Assert.IsFalse(q.Enq(str3));// false A B C
-            Assert.IsFalse(q.Enq(str2));// false A B C
-            Assert.IsFalse(q.Enq(str1));// false A B C
+            Assert.IsTrue(q.Enq(str1));
+            Assert.IsTrue(q.Enq(str2));
+            Assert.IsTrue(q.Enq(str3));
+            Assert.IsFalse(q.Enq(str3));
+            Assert.IsFalse(q.Enq(str2));
+            Assert.IsFalse(q.Enq(str1));
 
-            Assert.IsTrue(q.GetQueueCopy().SequenceEqual(new string[] { str1, str2, str3 }));
+            Assert.IsTrue(q.GetPrivateArrayCopy().SequenceEqual(new string[] { str1, str2, str3 }));
         }
 
         [TestMethod]
         public void ShouldDequeueCorrectrly()
         {
-            var q = new RingBuffer.Queue<string>(Capacity);
-            string result = string.Empty;
-            string empty = default(string);
+            var q = new RingBuffer.Queue<string>(CAPACITY);
+            string empty = default;
 
+            Assert.IsFalse(q.Deq(out string result));
             Assert.IsFalse(q.Deq(out result));
             Assert.IsFalse(q.Deq(out result));
             Assert.IsFalse(q.Deq(out result));
-            Assert.IsFalse(q.Deq(out result));
-
             
-            Assert.IsTrue(q.Enq(str1)); // true; A - -
-            Assert.IsTrue(q.Enq(str2)); // true; A B -
-            Assert.IsTrue(q.Enq(null)); // true: A B x
-            Assert.IsFalse(q.Enq(str3)); // false
+            Assert.IsTrue(q.Enq(str1));
+            Assert.IsTrue(q.Enq(str2));
+            Assert.IsTrue(q.Enq(null));
+            Assert.IsFalse(q.Enq(str3));
 
-            Assert.IsTrue(q.Deq(out result)); // true; (A) B x
+            Assert.IsTrue(q.Deq(out result));
             Assert.AreEqual(result, str1);
-            Assert.IsTrue(q.Deq(out result)); // true; - (B) x
+            Assert.IsTrue(q.Deq(out result));
             Assert.AreEqual(result, str2);
-            Assert.IsTrue(q.Deq(out result)); // true; - - (x)
+            Assert.IsTrue(q.Deq(out result));
             Assert.AreEqual(result, null);
-            Assert.IsFalse(q.Deq(out result)); // false; - - -
+            Assert.IsFalse(q.Deq(out result));
 
-            q.GetQueueCopy().ToList().ForEach(a => Console.WriteLine(a));
-            Assert.IsTrue(q.GetQueueCopy().SequenceEqual(new string[] { empty, empty, empty }));
+            q.GetPrivateArrayCopy().ToList().ForEach(a => Console.WriteLine(a));
+            Assert.IsTrue(q.GetPrivateArrayCopy().SequenceEqual(new string[] { empty, empty, empty }));
         }
 
         /// <summary>
-        /// Тест помог мне найти баг в алгоритме
+        /// Тест помог найти баг в алгоритме
         /// </summary>
         [TestMethod]
         public void RandomCalls()
         {
-            var q = new RingBuffer.Queue<int>(Capacity);
-            int result = 0;
-            int testNumber = 5;
-            Random rnd = new Random();
+            var q = new RingBuffer.Queue<int>(CAPACITY);
+            
+            Random rnd = new();
+            int testNumber = rnd.Next(int.MaxValue);
+            int result;
 
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < TEST_COUNT; i++)
             {
                 int step = rnd.Next(2);
                 if (step == 0)
@@ -114,23 +113,22 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Воспроизведение ситуации, в которой появлялась ошибка
+        /// Воспроизведение ситуации с багом
         /// </summary>
         [TestMethod]
         public void CoolTest()
         {
-            var q = new RingBuffer.Queue<string>(Capacity);
-            string result = string.Empty;
+            var q = new RingBuffer.Queue<string>(CAPACITY);
             q.Enq(str1);
             q.Enq(str1);
             q.Enq(str1);
             q.Enq(str1);
-            q.Deq(out result);
-            q.Deq(out result);
-            q.Deq(out result);
-            q.Deq(out result);
+            _ = q.Deq(out _);
+            _ = q.Deq(out _);
+            _ = q.Deq(out _);
+            _ = q.Deq(out _);
             q.Enq(str1);
-            q.Deq(out result);
+            q.Deq(out string result);
             Assert.AreEqual(result, str1);
         }
     }
