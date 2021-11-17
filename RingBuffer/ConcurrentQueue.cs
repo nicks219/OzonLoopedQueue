@@ -16,9 +16,9 @@ namespace RingBuffer
 
         public ConcurrentQueue(Queue<T> queue)
         {
-            if (queue is null) throw new ArgumentException("Capacity must be greater than zero.");
+            if (queue is null) throw new NullReferenceException("Queue must be not null.");
 
-            _queue = queue;
+            _queue = new Queue<T>(queue);
         }
 
         /// <summary>

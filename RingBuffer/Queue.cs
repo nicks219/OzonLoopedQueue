@@ -20,6 +20,14 @@ namespace RingBuffer
             _capacity = capacity;
         }
 
+        public Queue(Queue<T> queue)
+        {
+            if (queue is null) throw new NullReferenceException("Queue must be not null.");
+
+            _array = queue._array.ToArray();
+            _capacity = queue._capacity;
+        }
+
         // Добавить элемент в массив
         // `true` если удалось добавить элемент в очередь (ещё осталось место). В противном случае `false`
         public bool Enq(T item)
