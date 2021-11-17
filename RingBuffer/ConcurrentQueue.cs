@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 
 namespace RingBuffer
@@ -29,15 +28,12 @@ namespace RingBuffer
         /// <returns>Удалось или нет добавить значение</returns>
         public bool TryEnq(T item)
         {
-            bool result = false;
+            //if (0 == Interlocked.Exchange(ref _usingResource, 1))
+            while (0 != Interlocked.Exchange(ref _usingResource, 1)) { }
 
-            if (0 == Interlocked.Exchange(ref _usingResource, 1))
-            {
-                _queue.Enq(item);
-                result = true;
+            bool result = _queue.Enq(item);
 
-                Interlocked.Exchange(ref _usingResource, 0);
-            }
+            Interlocked.Exchange(ref _usingResource, 0);
 
             return result;
         }
@@ -49,16 +45,12 @@ namespace RingBuffer
         /// <returns>Удалось или нет получить значение</returns>
         public bool TryDeq(out T item)
         {
-            item = default;
-            bool result = false;
+            //if (0 == Interlocked.Exchange(ref _usingResource, 1))
+            while (0 != Interlocked.Exchange(ref _usingResource, 1)) { }
 
-            if (0 == Interlocked.Exchange(ref _usingResource, 1))
-            {
-                _queue.Deq(out item);
-                result = true;
+            bool result = _queue.Deq(out item);
 
-                Interlocked.Exchange(ref _usingResource, 0);
-            }
+            Interlocked.Exchange(ref _usingResource, 0);
 
             return result;
         }
@@ -69,8 +61,6 @@ namespace RingBuffer
         /// <returns>Queue в виде копии внутреннего массива</returns>
         public T[] GetPrivateArrayCopy()
         {
-            //T[] newArray = _array.ToArray();
-            //return newArray;
             return _queue.GetPrivateArrayCopy();
         }
 
@@ -80,7 +70,6 @@ namespace RingBuffer
         /// <returns> Внутренне поле _size</returns>
         public int GetPrivateSizeCopy()
         {
-            //return _size;
             return _queue.GetPrivateSizeCopy();
         }
     }
