@@ -258,7 +258,7 @@ namespace RingBuffer
         [TestMethod]
         public void SynchronousBenchmark()
         {
-            int testCount = 100;
+            int testCount = 3000000;
             int bufferSize = 10000;
             var q = new Queue<long>(bufferSize);
             var cq = new ConcurrentQueue<long>(q);
