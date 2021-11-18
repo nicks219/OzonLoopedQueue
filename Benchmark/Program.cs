@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Benchmark
@@ -14,6 +15,8 @@ namespace Benchmark
     {
         static void Main(string[] args)
         {
+            TryChannel().Wait();
+
             for (int i = 0; i < 10; i++)
             {
                 Console.WriteLine($"Test {i} start...");
@@ -184,6 +187,42 @@ namespace Benchmark
             {
                 throw new Exception("TRY-ALL ERROR");
             }
+        }
+
+        // Код использования Channel
+        // Взят с сайта: https://deniskyashif.com/2019/12/08/csharp-channels-part-1/
+        //
+
+        public static async Task TryChannel()
+        {
+            int testCount = 10000000;
+            int bufferSize = 10000;
+            var ch = Channel.CreateBounded<long>(bufferSize);
+            Stopwatch stopWatch = new();
+            stopWatch.Start();
+
+            var consumer = Task.Run(async () =>
+            {
+            while (await ch.Reader.WaitToReadAsync())
+            //Console.WriteLine(await ch.Reader.ReadAsync());
+            await ch.Reader.ReadAsync();
+            });
+            var producer = Task.Run(async () =>
+            {
+                var rnd = new Random();
+                for (int i = 0; i < testCount; i++)
+                {
+                    //await Task.Delay(TimeSpan.FromSeconds(rnd.Next(3)));
+                    await ch.Writer.WriteAsync(i);
+                }
+                ch.Writer.Complete();
+            });
+
+            await Task.WhenAll(producer, consumer);
+            stopWatch.Stop();
+            var time = stopWatch.Elapsed.TotalSeconds;
+
+            Console.WriteLine("System.Threading.Channels performance: " + Math.Round(testCount / time, 0) + "\n");
         }
     }
 }
