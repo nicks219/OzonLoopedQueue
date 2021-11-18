@@ -18,7 +18,7 @@ namespace Benchmark
             {
                 Console.WriteLine($"Test {i} start...");
                 TryDeqBenchmark();
-                TryDeqAllBenchmark();
+                //TryDeqAllBenchmark();
                 Console.WriteLine("\n");
             }
         }

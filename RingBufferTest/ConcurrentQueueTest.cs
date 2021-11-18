@@ -279,48 +279,48 @@ namespace RingBuffer
             stopWatch.Start();
 
             Parallel.Invoke(
-                () =>
+            () =>
+            {
+                int i = 0;
+                while (i < testCount)
                 {
-                    int i = 0;
-                    while (i < testCount)
+                    bool result = cq.TryEnq(number);
+                    if (result)
                     {
-                        bool result = cq.TryEnq(number);
-                        if (result)
-                        {
-                            listEnq.Add(number);
-                            number++;
-                        }
-                        else
-                        {
-                            enqFaults++;
-                        }
-
-                        i++;
+                        listEnq.Add(number);
+                        number++;
                     }
+                    else
+                    {
+                        enqFaults++;
+                    }
+
+                    i++;
+                }
 
                     // TODO: перепиши костыль
                     // Читаем последний блок для теста
                     if (listDeq.Count < listEnq.Count)
-                    {
-                        foreach (var a in cq.TryDeqAll())
-                        {
-                            listDeq.Add(a);
-                        }
-                    }
-                },
-
-                () =>
                 {
-                    for (int i = 0; i < testCount; i++)
+                    foreach (var a in cq.TryDeqAll())
                     {
-                        foreach (var a in cq.TryDeqAll())
-                        {
-                            listDeq.Add(a);
-                            i++;
-                        }
-                        deqYieldCount++;
+                        listDeq.Add(a);
                     }
-                });
+                }
+            },
+
+            () =>
+            {
+                for (int i = 0; i < testCount; i++)
+                {
+                    foreach (var a in cq.TryDeqAll())
+                    {
+                        listDeq.Add(a);
+                        i++;
+                    }
+                    deqYieldCount++;
+                }
+            });
 
             stopWatch.Stop();
             var time = stopWatch.Elapsed.TotalSeconds;
