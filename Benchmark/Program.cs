@@ -12,17 +12,14 @@ namespace Benchmark
     /// </summary>
     class Program
     {
-
-
         static void Main(string[] args)
         {
             for (int i = 0; i < 10; i++)
             {
                 Console.WriteLine($"Test {i} start...");
-                var r1 = TryDeqBenchmark();
-                var r2 = TryDeqAllBenchmark();
-                var result = r1 && r2 == true ? "ok" : "falls";
-                Console.WriteLine($"Test {i} {result}" + "\n");
+                TryDeqBenchmark();
+                TryDeqAllBenchmark();
+                Console.WriteLine("\n");
             }
         }
 
@@ -30,7 +27,7 @@ namespace Benchmark
         /// Бенчмарк метода TryDeq
         /// </summary>
         /// <returns></returns>
-        static bool TryDeqBenchmark()
+        static void TryDeqBenchmark()
         {
             // Выявлена проблема: редкие просадки производительности в 5 раз
             // Возможно, стоит поменять lock-free блокировку на SpinLock
@@ -45,7 +42,7 @@ namespace Benchmark
 
             var consumer = Task.Run(() =>
             {
-                for (long i = 0; i < 10000000; i++)
+                for (long i = 0; i < testCount; i++)
                 {
                     while (!cq.TryEnq(i))
                     {
@@ -55,7 +52,7 @@ namespace Benchmark
 
             var producer = Task.Run(() =>
             {
-                for (long i = 0; i < 10000000; i++)
+                for (long i = 0; i < testCount; i++)
                 {
                     long j;
                     while (!cq.TryDeq(out j))
@@ -75,19 +72,20 @@ namespace Benchmark
 
             Console.WriteLine(sw.Elapsed.TotalSeconds);
             Console.WriteLine($"{Math.Round(testCount / sw.Elapsed.TotalSeconds, 0)} request per second" + "\n");
-            return true;
         }
 
         /// <summary>
         /// Бенчмарк метода TryDeqAll
         /// </summary>
         /// <returns></returns>
-        static bool TryDeqAllBenchmark()
+        static void TryDeqAllBenchmark()
         {
+            // РЕШЕНО (проблема была в тесте)
             // Выявлена проблема: возможна ситуация при которой ровно один буфер будет "теряется"
             // чтение/запись по очереди: проблему не решают
             // увеличение время на чтение: проблему не решают
             // уменьшение количества запросов (testCount): усугубляет проблему
+            // Уточнение: не вычитывается последний блок коллекции
 
             int testCount = 10000000;
             int bufferSize = 10000;
@@ -120,6 +118,16 @@ namespace Benchmark
                     }
 
                     i++;
+                }
+
+                // TODO: перепиши костыль
+                // Читаем последний блок для теста
+                if (listDeq.Count < listEnq.Count)
+                {
+                    foreach (var a in cq.TryDeqAll())
+                    {
+                        listDeq.Add(a);
+                    }
                 }
             });
 
@@ -169,15 +177,12 @@ namespace Benchmark
             Console.WriteLine($"Deq count: {listDeq.Count}");
             Console.WriteLine($"Enq count: {listEnq.Count}");
             Console.WriteLine($"Total time: {time}");
-            Console.WriteLine($"Total calls: {testCount}" + "\n");
+            Console.WriteLine($"Total calls: {testCount}");
 
             if (listDeq.Count != listEnq.Count || listDeq.Count != write || faults + repeats > 0)
             {
-                Console.WriteLine("TRY-DEQ-ALL BENCHMARK FALL: " + (listEnq.Count - listDeq.Count) + "\n");
-                return false;
+                throw new Exception("TRY-ALL ERROR");
             }
-
-            return true;
         }
     }
 }

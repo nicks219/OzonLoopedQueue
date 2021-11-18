@@ -259,10 +259,12 @@ namespace RingBuffer
         [TestMethod]
         public void BenchmarkTryDeqAllMethod()
         {
+            // РЕШЕНО (проблема была в тесте)
             // Выявлена проблема: возможна ситуация при которой ровно один буфер будет "теряется"
             // чтение/запись по очереди: проблему не решают
             // увеличение время на чтение: проблему не решают
             // уменьшение количества запросов (testCount): усугубляет проблему
+            // Уточнение: не вычитывается последний блок коллекции
 
             int testCount = 10000000;
             int bufferSize = 10000;
@@ -294,6 +296,16 @@ namespace RingBuffer
                         }
 
                         i++;
+                    }
+
+                    // TODO: перепиши костыль
+                    // Читаем последний блок для теста
+                    if (listDeq.Count < listEnq.Count)
+                    {
+                        foreach (var a in cq.TryDeqAll())
+                        {
+                            listDeq.Add(a);
+                        }
                     }
                 },
 
@@ -332,7 +344,7 @@ namespace RingBuffer
 
             bool equals = listEnq.SequenceEqual(listDeq);
 
-            //Assert.IsTrue(equals);
+            Assert.IsTrue(equals);
             Assert.IsTrue(faults + repeats == 0);
             Assert.IsTrue(listEnq.Count == listDeq.Count);
         }
@@ -357,7 +369,7 @@ namespace RingBuffer
 
             var consumer = Task.Run(() =>
             {
-                for (long i = 0; i < 10000000; i++)
+                for (long i = 0; i < testCount; i++)
                 {
                     while (!cq.TryEnq(i))
                     {
@@ -367,7 +379,7 @@ namespace RingBuffer
 
             var producer = Task.Run(() =>
             {
-                for (long i = 0; i < 10000000; i++)
+                for (long i = 0; i < testCount; i++)
                 {
                     long j;
                     while (!cq.TryDeq(out j))

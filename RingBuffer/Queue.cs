@@ -67,7 +67,7 @@ namespace RingBuffer
             }
 
             item = _array[_head];
-            _array[_head] = default(T);
+            _array[_head] = default;
             _head = (++_head) % _capacity;
             _size--;
 
