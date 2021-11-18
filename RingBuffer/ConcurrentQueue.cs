@@ -1,18 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace RingBuffer
 {
-    // Кольцевой буфер. Очередь (FIFO) на массиве фиксированного размера.
-
     /// <summary>
-    /// Неблокирующая потокобезопасная обертка над кольцевым буфером
+    /// lock-free потокобезопасная обертка над кольцевым буфером
     /// </summary>
     /// <typeparam name="T">Тип хранимых данных</typeparam>
     public class ConcurrentQueue<T>
     {
         private readonly Queue<T> _queue;
-        private int _usingResource = 0;
+        private long _usingResource = 0;
 
         public ConcurrentQueue(Queue<T> queue)
         {
@@ -22,13 +21,12 @@ namespace RingBuffer
         }
 
         /// <summary>
-        /// Попытка добавить значение в буфер
+        /// Попытка записать значение в буфер
         /// </summary>
-        /// <param name="item"></param>
-        /// <returns>Удалось или нет добавить значение</returns>
+        /// <param name="item">Записываемое значение</param>
+        /// <returns>Удалось или нет записать значение</returns>
         public bool TryEnq(T item)
         {
-            //if (0 == Interlocked.Exchange(ref _usingResource, 1))
             while (0 != Interlocked.Exchange(ref _usingResource, 1)) { }
 
             bool result = _queue.Enq(item);
@@ -36,23 +34,41 @@ namespace RingBuffer
             Interlocked.Exchange(ref _usingResource, 0);
 
             return result;
+
         }
 
         /// <summary>
-        /// Попытка получить значение из буфера
+        /// Попытка прочитать значение из буфера
         /// </summary>
-        /// <param name="item"></param>
-        /// <returns>Удалось или нет получить значение</returns>
+        /// <param name="item">Читаемое значение</param>
+        /// <returns>Удалось или нет прочитать значение</returns>
         public bool TryDeq(out T item)
         {
-            //if (0 == Interlocked.Exchange(ref _usingResource, 1))
-            while (0 != Interlocked.Exchange(ref _usingResource, 1)) { }
+            while (0 != Interlocked.Exchange(ref _usingResource, 2)) { }
 
             bool result = _queue.Deq(out item);
 
             Interlocked.Exchange(ref _usingResource, 0);
 
             return result;
+        }
+
+        /// <summary>
+        /// Прочитать весь буфер
+        /// </summary>
+        /// <returns>Последовательность элементов</returns>
+        public IEnumerable<T> TryDeqAll()
+        {
+            while (0 != Interlocked.Exchange(ref _usingResource, 3)) { }
+
+            while (_queue.GetPrivateSizeCopy() > 0)
+            {
+                _queue.Deq(out T item);
+
+                yield return item;
+            }
+
+            Interlocked.Exchange(ref _usingResource, 0);
         }
 
         /// <summary>

@@ -51,11 +51,11 @@ namespace RingBuffer
         {
             var q = new Queue<string>(SMALL_CAPACITY);
             var cq = new ConcurrentQueue<string>(q);
-            
+
             cq.TryEnq(str1);
             cq.TryEnq(str2);
             cq.TryDeq(out string result);
-            
+
             Assert.AreEqual(result, str1);
 
             cq.TryDeq(out result);
@@ -253,48 +253,142 @@ namespace RingBuffer
         }
 
         /// <summary>
-        /// Самодельный бенчмарк
+        /// Бенчмарк метода TryDeqAll
         /// </summary>
+        /// <returns></returns>
         [TestMethod]
-        public void SynchronousBenchmark()
+        public void BenchmarkTryDeqAllMethod()
         {
-            int testCount = 3000000;
+            // Выявлена проблема: возможна ситуация при которой ровно один буфер будет "теряется"
+            // чтение/запись по очереди: проблему не решают
+            // увеличение время на чтение: проблему не решают
+            // уменьшение количества запросов (testCount): усугубляет проблему
+
+            int testCount = 10000000;
             int bufferSize = 10000;
-            var q = new Queue<long>(bufferSize);
-            var cq = new ConcurrentQueue<long>(q);
-            List<long> list = new(testCount);
+            int number = 0;
+            int deqYieldCount = 0;
+            int enqFaults = 0;
+            var q = new RingBuffer.Queue<long>(bufferSize);
+            var cq = new RingBuffer.ConcurrentQueue<long>(q);
+            List<long> listDeq = new(testCount);
+            List<long> listEnq = new(testCount);
             Stopwatch stopWatch = new();
             stopWatch.Start();
 
-            for (int i = 0; i < testCount; i++)
-            {
-                Parallel.Invoke(
-                    () => cq.TryEnq(i),
-                    () =>
+            Parallel.Invoke(
+                () =>
+                {
+                    int i = 0;
+                    while (i < testCount)
                     {
-                        cq.TryDeq(out long result);
-                        list.Add(result);
+                        bool result = cq.TryEnq(number);
+                        if (result)
+                        {
+                            listEnq.Add(number);
+                            number++;
+                        }
+                        else
+                        {
+                            enqFaults++;
+                        }
+
+                        i++;
                     }
-                    );
-            }
+                },
+
+                () =>
+                {
+                    for (int i = 0; i < testCount; i++)
+                    {
+                        foreach (var a in cq.TryDeqAll())
+                        {
+                            listDeq.Add(a);
+                            i++;
+                        }
+                        deqYieldCount++;
+                    }
+                });
 
             stopWatch.Stop();
             var time = stopWatch.Elapsed.TotalSeconds;
             int repeats = 0;
             int faults = 0;
 
-            for (int i = 1; i < list.Count; i++)
+            for (int i = 1; i < listDeq.Count; i++)
             {
-                if (list[i] == list[i - 1]) repeats++;
-                if (list[i] != list[i - 1] + 1) { faults++; i++; }
+                if (listDeq[i] == listDeq[i - 1]) repeats++;
+
+                if (listDeq[i] != listDeq[i - 1] + 1)
+                {
+                    faults++;
+                    i++;
+                }
             }
 
-            Assert.IsTrue(repeats == 0);
-            Assert.IsTrue(faults <= 1);
+            Console.WriteLine($"Dequeue requests per second: {Math.Round(listDeq.Count / time, 0)}");
+            Console.WriteLine($"Total dequeue requests: {listDeq.Count}");
+            Console.WriteLine($"Total enqueue requests: {listEnq.Count}");
 
-            Console.WriteLine($"Repeats: {(double)repeats / list.Count} ({repeats})");
-            Console.WriteLine($"Faults: {(double)faults / list.Count} ({faults})");
-            Console.WriteLine($"Requests per second: {Math.Round(testCount / time, 0)}");
+            bool equals = listEnq.SequenceEqual(listDeq);
+
+            //Assert.IsTrue(equals);
+            Assert.IsTrue(faults + repeats == 0);
+            Assert.IsTrue(listEnq.Count == listDeq.Count);
+        }
+
+        /// <summary>
+        /// Бенчмарк метода TryDeq
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod]
+        public void BenchmarkTryDeqMethod()
+        {
+            // Выявлена проблема: редкие просадки производительности в 5 раз
+            // Возможно, стоит поменять lock-free блокировку на SpinLock
+
+            int testCount = 10000000;
+            int bufferSize = 10000;
+            int errorCount = 0;
+            var q = new RingBuffer.Queue<long>(bufferSize);
+            var cq = new RingBuffer.ConcurrentQueue<long>(q);
+            Stopwatch sw = new();
+            sw.Start();
+
+            var consumer = Task.Run(() =>
+            {
+                for (long i = 0; i < 10000000; i++)
+                {
+                    while (!cq.TryEnq(i))
+                    {
+                    }
+                }
+            });
+
+            var producer = Task.Run(() =>
+            {
+                for (long i = 0; i < 10000000; i++)
+                {
+                    long j;
+                    while (!cq.TryDeq(out j))
+                    {
+                    }
+
+                    if (j != i)
+                    {
+                        errorCount++;
+                    }
+                }
+            });
+
+            Task.WaitAll(new[] { consumer, producer });
+
+            sw.Stop();
+
+            Console.WriteLine(sw.Elapsed.TotalSeconds);
+            Console.WriteLine($"{Math.Round(testCount / sw.Elapsed.TotalSeconds, 0)} request per second" + "\n");
+
+            Assert.AreEqual(0, errorCount);
         }
     }
 }

@@ -3,7 +3,10 @@ using System.Linq;
 
 namespace RingBuffer
 {
-    // Кольцевой буфер. Очередь (FIFO) на массиве фиксированного размера.
+    /// <summary>
+    /// Кольцевой буфер. Очередь (FIFO) на массиве фиксированного размера.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class Queue<T>
     {
         private readonly T[] _array;
@@ -28,8 +31,11 @@ namespace RingBuffer
             _capacity = queue._capacity;
         }
 
-        // Добавить элемент в массив
-        // `true` если удалось добавить элемент в очередь (ещё осталось место). В противном случае `false`
+        /// <summary>
+        /// Добавить элемент в массив
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns>`true` если удалось добавить элемент в очередь (ещё осталось место). В противном случае `false`</returns>
         public bool Enq(T item)
         {
             int previousIndex = _tail;
@@ -46,12 +52,14 @@ namespace RingBuffer
             return true;
         }
 
-        // Извлечь элемент из массива
-        // возвращает `true` если очередь была не пустой и в out-параметре вернется значение первого в очереди элемента.
-        // `false` если очередь пуста и возвращать нечего.</returns>
+        /// <summary>
+        /// Извлечь элемент из массива
+        /// </summary>
+        /// <param name="item">значение первого в очереди элемента</param>
+        /// <returns>`true` если очередь была не пустой, `false` если очередь пуста и возвращать нечего</returns>
         public bool Deq(out T item)
         {
-            item = default(T);
+            item = default;
 
             if (_size == 0)
             {
