@@ -11,7 +11,7 @@ namespace RingBuffer
     public class ConcurrentQueue<T>
     {
         private readonly Queue<T> _queue;
-        private long _usingResource = 0;
+        volatile private int _usingResource = 0;
 
         public ConcurrentQueue(Queue<T> queue)
         {
@@ -44,7 +44,20 @@ namespace RingBuffer
         /// <returns>Удалось или нет прочитать значение</returns>
         public bool TryDeq(out T item)
         {
-            while (0 != Interlocked.Exchange(ref _usingResource, 2)) { }
+            item = default;
+
+            int count = 10;
+
+            // Усредненная произовдительность: 1 млн ~ 3 млн запросов в секунду в моём сценарии
+            while (0 != Interlocked.Exchange(ref _usingResource, 2))
+            {
+                if (count-- < 0)
+                {
+                    Thread.Yield();
+
+                    return false;
+                }
+            }
 
             bool result = _queue.Deq(out item);
 
