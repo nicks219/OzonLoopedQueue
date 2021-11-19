@@ -20,7 +20,6 @@ namespace RingBufferTest
         }
 
         [TestMethod]
-
         public void ShouldWorkOneElementCapacityQueue()
         {
             var q = new RingBuffer.Queue<string>(1);

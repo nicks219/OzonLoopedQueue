@@ -60,7 +60,7 @@ namespace RingBuffer
 
                     while (0 != Interlocked.Exchange(ref _usingResource, 2))
                     {
-                        if (count++ > 10)
+                        if (count++ > 2)
                         {
                             return false;
                         }

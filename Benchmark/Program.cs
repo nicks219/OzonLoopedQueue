@@ -104,6 +104,17 @@ namespace Benchmark
             int deqYieldCount = 0;
             int enqFaults = 0;
 
+            void finalConsumption()
+            {
+                if (listDeq.Count < listEnq.Count)
+                {
+                    foreach (var a in cq.TryDeqAll())
+                    {
+                        listDeq.Add(a);
+                    }
+                }
+            };
+
             var producer = Task.Run(() =>
             {
                 int i = 0;
@@ -126,13 +137,16 @@ namespace Benchmark
 
                 // TODO: перепиши костыль
                 // Читаем последний блок для теста
-                if (listDeq.Count < listEnq.Count)
-                {
-                    foreach (var a in cq.TryDeqAll())
-                    {
-                        listDeq.Add(a);
-                    }
-                }
+
+                //if (listDeq.Count < listEnq.Count)
+                //{
+                //    foreach (var a in cq.TryDeqAll())
+                //    {
+                //        listDeq.Add(a);
+                //    }
+                //}
+
+                finalConsumption();
             });
 
             var consumer = Task.Run(() =>
@@ -148,7 +162,6 @@ namespace Benchmark
                     deqYieldCount++;
                 }
             });
-
 
             Task.WaitAll(new[] { consumer, producer });
 
@@ -204,7 +217,6 @@ namespace Benchmark
             var consumer = Task.Run(async () =>
             {
             while (await ch.Reader.WaitToReadAsync())
-            //Console.WriteLine(await ch.Reader.ReadAsync());
             await ch.Reader.ReadAsync();
             });
             var producer = Task.Run(async () =>
@@ -212,7 +224,6 @@ namespace Benchmark
                 var rnd = new Random();
                 for (int i = 0; i < testCount; i++)
                 {
-                    //await Task.Delay(TimeSpan.FromSeconds(rnd.Next(3)));
                     await ch.Writer.WriteAsync(i);
                 }
                 ch.Writer.Complete();
