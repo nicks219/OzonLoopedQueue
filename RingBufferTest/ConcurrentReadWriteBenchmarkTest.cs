@@ -5,10 +5,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace RingBufferTest
+namespace RingBuffer
 {
     [TestClass]
-    class ConcurrentReadWriteBenchmarkTest
+    public class ConcurrentReadWriteBenchmarkTest
     {
         [TestMethod]
         [DataRow(10000000, 10000)]
