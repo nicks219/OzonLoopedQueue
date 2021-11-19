@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RingBufferTest
@@ -7,87 +8,99 @@ namespace RingBufferTest
     [TestClass]
     public class QueueTest
     {
-        private const int CAPACITY = 3;
-        private const int TEST_COUNT = 1000;
         private readonly string str1 = "A";
-        private readonly string str2 = "B";
-        private readonly string str3 = "C";
 
         [TestMethod]
-        public void ShouldThrowException()
+        [DataRow(default)]
+        [DataRow(int.MinValue)]
+        public void ShouldThrowException(int capacity)
         {
-            Assert.ThrowsException<ArgumentException>(() => new RingBuffer.Queue<string>(0));
+            Assert.ThrowsException<ArgumentException>(() => new RingBuffer.Queue<string>(capacity));
         }
 
         [TestMethod]
-        public void ShouldWorkOneElementCapacityQueue()
+        [DataRow(typeof(int))]
+        [DataRow(typeof(string))]
+        [DataRow(typeof(QueueTest))]
+        public void ShouldCreateDifferentTypes(Type queueGenericType)
         {
-            var q = new RingBuffer.Queue<string>(1);
-            q.Enq(str1);
-            q.Enq(str2);
-            q.Deq(out string result);
-            Assert.AreEqual(result, str1);
+            Type type = typeof(RingBuffer.Queue<>).MakeGenericType(queueGenericType.GetType());
+            dynamic a_Context = Activator.CreateInstance(type, new object[] { 1 });
 
-            q.Deq(out result);
-            Assert.AreEqual(result, default);
+            Assert.IsNotNull(type.GetMethod("GetPrivateArrayCopy").Invoke(a_Context, null));
         }
 
         [TestMethod]
-        public void ShouldEnqueueCorrectrly()
+        [DataRow(1)]
+        [DataRow(100)]
+        [DataRow(1000)]
+        public void ShouldEnqueAndDequeCorrectly(int capacity)
         {
-            var q = new RingBuffer.Queue<string>(CAPACITY);
+            RingBuffer.Queue<int> q = new(capacity);
 
-            Assert.IsTrue(q.Enq(str1));
-            Assert.IsTrue(q.Enq(str2));
-            Assert.IsTrue(q.Enq(str3));
-            Assert.IsFalse(q.Enq(str3));
-            Assert.IsFalse(q.Enq(str2));
-            Assert.IsFalse(q.Enq(str1));
+            List<int> testList = Enumerable.Range(1, capacity).ToList();
+            List<int> resultList = new();
+            testList.ForEach(i => Assert.IsTrue(q.Enq(i)));
+            List<int> innerList = q.GetPrivateArrayCopy().ToList();
+            testList.ForEach(i => { Assert.IsTrue(q.Deq(out int r)); resultList.Add(r); });
 
-            Assert.IsTrue(q.GetPrivateArrayCopy().SequenceEqual(new string[] { str1, str2, str3 }));
+            Assert.IsTrue(innerList.SequenceEqual(testList));
+            Assert.IsTrue(resultList.SequenceEqual(testList));
         }
 
         [TestMethod]
-        public void ShouldDequeueCorrectrly()
+        [DataRow(1)]
+        [DataRow(100)]
+        [DataRow(1000)]
+        public void ShouldEnqueueCorrectrly(int capacity)
         {
-            var q = new RingBuffer.Queue<string>(CAPACITY);
-            string empty = default;
+            RingBuffer.Queue<int> q = new(capacity);
 
-            Assert.IsFalse(q.Deq(out string result));
-            Assert.IsFalse(q.Deq(out result));
-            Assert.IsFalse(q.Deq(out result));
-            Assert.IsFalse(q.Deq(out result));
-            
-            Assert.IsTrue(q.Enq(str1));
-            Assert.IsTrue(q.Enq(str2));
-            Assert.IsTrue(q.Enq(null));
-            Assert.IsFalse(q.Enq(str3));
+            List<int> testList = Enumerable.Repeat(1, capacity).ToList();
+            testList.ForEach(i => Assert.IsTrue(q.Enq(i)));
+            Enumerable
+                .Repeat(1, capacity)
+                .ToList()
+                .ForEach(i => Assert.IsFalse(q.Enq(i)));
 
-            Assert.IsTrue(q.Deq(out result));
-            Assert.AreEqual(result, str1);
-            Assert.IsTrue(q.Deq(out result));
-            Assert.AreEqual(result, str2);
-            Assert.IsTrue(q.Deq(out result));
-            Assert.AreEqual(result, null);
-            Assert.IsFalse(q.Deq(out result));
+            Assert.IsTrue(q.GetPrivateArrayCopy().SequenceEqual(testList));
+        }
 
-            q.GetPrivateArrayCopy().ToList().ForEach(a => Console.WriteLine(a));
-            Assert.IsTrue(q.GetPrivateArrayCopy().SequenceEqual(new string[] { empty, empty, empty }));
+        [TestMethod]
+        [DataRow(1)]
+        [DataRow(100)]
+        [DataRow(1000)]
+        public void ShouldDequeueCorrectrly(int capacity)
+        {
+            RingBuffer.Queue<int> q = new(capacity);
+            List<int> testList = Enumerable.Repeat(1, capacity).ToList();
+            testList.ForEach(i => { Assert.IsFalse(q.Deq(out int r)); });
+
+            int number = int.MaxValue;
+            q.Enq(number);
+            q.Deq(out int result);
+            q.Deq(out int result2);
+
+            Assert.AreEqual(result, number);
+            Assert.AreEqual(result2, default);
         }
 
         /// <summary>
-        /// Тест помог найти баг в алгоритме
+        /// Тест помог найти баг в алгоритме, оставлю "как есть"
         /// </summary>
         [TestMethod]
-        public void RandomCalls()
+        [DataRow(1, 1000)]
+        [DataRow(3, 1000)]
+        [DataRow(100, 10000)]
+        [DataRow(999, 1000)]
+        public void ShouldEnqueAndDequeAdventitiously(int capacity, int testCount)
         {
-            var q = new RingBuffer.Queue<int>(CAPACITY);
-            
+            RingBuffer.Queue<int> q = new(capacity);
+
             Random rnd = new();
             int testNumber = rnd.Next(int.MaxValue);
             int result;
-
-            for (int i = 0; i < TEST_COUNT; i++)
+            for (int i = 0; i < testCount; i++)
             {
                 int step = rnd.Next(2);
                 if (step == 0)
@@ -104,7 +117,6 @@ namespace RingBufferTest
             q.Deq(out result);
             q.Deq(out result);
             q.Deq(out result);
-
             q.Enq(testNumber);
             q.Deq(out result);
 
@@ -112,12 +124,14 @@ namespace RingBufferTest
         }
 
         /// <summary>
-        /// Воспроизведение ситуации с багом
+        /// Воспроизведение ситуации с багом, оставлю "как есть"
         /// </summary>
         [TestMethod]
-        public void CoolTest()
+        [DataRow(3)]
+        public void FixedBug(int capacity)
         {
-            var q = new RingBuffer.Queue<string>(CAPACITY);
+            RingBuffer.Queue<string> q = new(capacity);
+
             q.Enq(str1);
             q.Enq(str1);
             q.Enq(str1);
@@ -128,6 +142,7 @@ namespace RingBufferTest
             _ = q.Deq(out _);
             q.Enq(str1);
             q.Deq(out string result);
+
             Assert.AreEqual(result, str1);
         }
     }

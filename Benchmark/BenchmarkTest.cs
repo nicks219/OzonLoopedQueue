@@ -10,8 +10,9 @@ namespace Benchmark
     /// <summary>
     /// Нагрузочные тесты чтения/записи
     /// Один поток пишет, другой читает
+    /// Тест выделен в проект для удобства отладки
     /// </summary>
-    class Program
+    class BenchmarkTest
     {
         static void Main(string[] args)
         {
