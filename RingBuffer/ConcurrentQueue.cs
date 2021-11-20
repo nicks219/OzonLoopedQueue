@@ -27,7 +27,28 @@ namespace RingBuffer
         /// <returns>Удалось или нет записать значение</returns>
         public bool TryEnq(T item)
         {
-            while (0 != Interlocked.Exchange(ref _usingResource, 1)) { }
+            //while (0 != Interlocked.Exchange(ref _usingResource, 1)) { }//
+            int count = 5;
+
+            while (0 != Interlocked.Exchange(ref _usingResource, 2))
+            {
+                if (count-- < 0)
+                {
+                    Thread.Yield();
+
+                    while (0 != Interlocked.Exchange(ref _usingResource, 2))
+                    {
+                        Thread.Yield();
+
+                        if (count++ > 5)
+                        {
+                            return false;
+                        }
+                    }
+
+                    break;
+                }
+            }
 
             bool result = _queue.Enq(item);
 
@@ -45,8 +66,8 @@ namespace RingBuffer
         public bool TryDeq(out T item)
         {
             item = default;
-
-            int count = 10;
+            
+            int count = 5;// 10
 
             while (0 != Interlocked.Exchange(ref _usingResource, 2))
             {
@@ -56,7 +77,9 @@ namespace RingBuffer
 
                     while (0 != Interlocked.Exchange(ref _usingResource, 2))//2
                     {
-                        if (count++ > 2)
+                        Thread.Yield();//
+
+                        if (count++ > 5)// 2
                         {
                             return false;
                         }

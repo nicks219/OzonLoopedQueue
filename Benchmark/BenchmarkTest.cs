@@ -22,7 +22,8 @@ namespace Benchmark
             TryChannel().Wait();
 
             Console.WriteLine("High load start");
-            HighLoadBenchmark();
+            HighLoadBenchmarkOne();
+            HighLoadBenchmarkTwo();
             Console.WriteLine("High load end" + "\n");
 
             for (int i = 0; i < 10; i++)
@@ -243,9 +244,9 @@ namespace Benchmark
 
         /// <summary>
         /// NO DRY CODE
-        /// Нагрузочный тест на 4х очередях
+        /// Нагрузочный тест на 4х разных очередях
         /// </summary>
-        static void HighLoadBenchmark()
+        static void HighLoadBenchmarkOne()
         {
             int testCount = 10000000 * C;
             int bufferSize = 10000;
@@ -354,6 +355,125 @@ namespace Benchmark
                     if (j != i)
                     {
                         throw new Exception("ERROR4");
+                    }
+                }
+            });
+
+            Task.WaitAll(new[] { consumer1, producer1, consumer2, producer2, consumer3, producer3, consumer4, producer4 });
+
+            sw.Stop();
+
+            Console.WriteLine(sw.Elapsed.TotalSeconds);
+            Console.WriteLine($"{Math.Round(testCount / sw.Elapsed.TotalSeconds, 0)} request per second");
+        }
+
+        /// <summary>
+        /// NO DRY CODE
+        /// Нагрузочный тест на одной очереди для 4х поставщиков и 4х потребителей
+        /// </summary>
+        static void HighLoadBenchmarkTwo()
+        {
+            int testCount = 10000000 * C;
+            int bufferSize = 10000;
+            var q1 = new RingBuffer.Queue<long>(bufferSize);
+            var cq1 = new RingBuffer.ConcurrentQueue<long>(q1);
+            Stopwatch sw = new();
+            sw.Start();
+
+            var consumer1 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    while (!cq1.TryEnq(i))
+                    {
+                    }
+                }
+            });
+            var consumer2 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    while (!cq1.TryEnq(i))
+                    {
+                    }
+                }
+            });
+            var consumer3 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    while (!cq1.TryEnq(i))
+                    {
+                    }
+                }
+            });
+            var consumer4 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    while (!cq1.TryEnq(i))
+                    {
+                    }
+                }
+            });
+
+            var producer1 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    long j;
+                    while (!cq1.TryDeq(out j))
+                    {
+                    }
+
+                    if (j != i)
+                    {
+                        //throw new Exception("ERROR1");
+                    }
+                }
+            });
+            var producer2 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    long j;
+                    while (!cq1.TryDeq(out j))
+                    {
+                    }
+
+                    if (j != i)
+                    {
+                        //throw new Exception("ERROR2");
+                    }
+                }
+            });
+            var producer3 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    long j;
+                    while (!cq1.TryDeq(out j))
+                    {
+                    }
+
+                    if (j != i)
+                    {
+                        //throw new Exception("ERROR3");
+                    }
+                }
+            });
+            var producer4 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    long j;
+                    while (!cq1.TryDeq(out j))
+                    {
+                    }
+
+                    if (j != i)
+                    {
+                        //throw new Exception("ERROR4");
                     }
                 }
             });
