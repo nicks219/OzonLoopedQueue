@@ -48,17 +48,13 @@ namespace RingBuffer
 
             int count = 10;
 
-            // Усредненная производительность: без цикла после Yield 1 млн ~ 3 млн запросов в секунду в тестовом сценарии
-            // Усредненная производительность: с циклом после Yield 1.1 млн ~ 4.5 млн запросов в секунду в тестовом сценарии
-            // Без Yield =): 0.5 млн ~ 4 млн запросов в секунду в тестовом сценарии
-
             while (0 != Interlocked.Exchange(ref _usingResource, 2))
             {
                 if (count-- < 0)
                 {
                     Thread.Yield();
 
-                    while (0 != Interlocked.Exchange(ref _usingResource, 2))
+                    while (0 != Interlocked.Exchange(ref _usingResource, 2))//2
                     {
                         if (count++ > 2)
                         {
@@ -78,10 +74,10 @@ namespace RingBuffer
         }
 
         /// <summary>
-        /// Прочитать весь буфер
+        /// Лениво прочитать весь буфер
         /// </summary>
         /// <returns>Последовательность элементов</returns>
-        public IEnumerable<T> TryDeqAll()
+        public IEnumerable<T> TryDeqAllLazy()
         {
             while (0 != Interlocked.Exchange(ref _usingResource, 3)) { }
 
@@ -90,6 +86,42 @@ namespace RingBuffer
                 _queue.Deq(out T item);
 
                 yield return item;
+            }
+
+            Interlocked.Exchange(ref _usingResource, 0);
+        }
+
+        /// <summary>
+        /// Прочитать весь буфер в список
+        /// </summary>
+        /// <param name="list">Заполняемый список</param>
+        public void TryDeqAll(List<T> list)
+        {
+            int count = 5;// 10
+
+            while (0 != Interlocked.Exchange(ref _usingResource, 2))
+            {
+                if (count-- < 0)
+                {
+                    Thread.Yield();
+
+                    while (0 != Interlocked.Exchange(ref _usingResource, 2))
+                    {
+                        if (count++ > 2)
+                        {
+                            return;
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            while (_queue.GetPrivateSizeCopy() > 0)
+            {
+                _queue.Deq(out T item);
+
+                list.Add(item);
             }
 
             Interlocked.Exchange(ref _usingResource, 0);
