@@ -24,13 +24,14 @@ namespace Benchmark
             Console.WriteLine("High load start");
             HighLoadBenchmarkOne();
             HighLoadBenchmarkTwo();
+            HalfLoadInTurnBenchmarkThree();
             Console.WriteLine("High load end" + "\n");
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 10 / C; i++)
             {
                 Console.WriteLine($"Test {i} start...");
                 TryDeqBenchmark();
-                TryDeqAllBenchmark();
+                TryDeqAllStatisticsBenchmark();
                 Console.WriteLine("\n");
             }
         }
@@ -92,7 +93,7 @@ namespace Benchmark
         /// Бенчмарк метода TryDeqAll
         /// </summary>
         /// <returns></returns>
-        static void TryDeqAllBenchmark()
+        static void TryDeqAllStatisticsBenchmark()
         {
             // Проблема: не вычитывается последний блок коллекции, решено "костылём"
 
@@ -148,7 +149,7 @@ namespace Benchmark
             var consumer = Task.Run(() =>
             {
                 List<long> listDeq = new(testCount);
-                int deqYieldCount = 0;
+                int deqPartsCount = 0;
 
                 for (int i = 0; i < testCount; i++)
                 {
@@ -158,14 +159,14 @@ namespace Benchmark
 
                     i += initialCount - listDeq.Count;
 
-                    deqYieldCount++;
+                    deqPartsCount++;
                 }
-                return (listDeq, deqYieldCount);
+                return (listDeq, deqPartsCount);
             });
 
             int enqFaults = producer.Result.enqFaults;
             int write = producer.Result.write;
-            int deqYieldCount = consumer.Result.deqYieldCount;
+            int deqPartsCount = consumer.Result.deqPartsCount;
             listEnq = producer.Result.listEnq;
             listDeq = consumer.Result.listDeq;
 
@@ -188,11 +189,12 @@ namespace Benchmark
             }
 
             var r = listEnq.SequenceEqual(listDeq);
+            Console.WriteLine("STATISTICS:");
             Console.WriteLine($"Read/write equals: {r}");
             Console.WriteLine($"Deq requests per second: {Math.Round(listDeq.Count / time, 0)}");
             Console.WriteLine($"Enq requests per second: {Math.Round(listEnq.Count / time, 0)}");
 
-            Console.WriteLine($"Pieces: {deqYieldCount}");
+            Console.WriteLine($"Deq parts: {deqPartsCount}");
             Console.WriteLine($"Enq faults: { enqFaults}");
             Console.WriteLine($"Repeats: {(double)repeats / listDeq.Count} ({repeats})");
             Console.WriteLine($"Faults: {(double)faults / listDeq.Count} ({faults})");
@@ -364,7 +366,7 @@ namespace Benchmark
             sw.Stop();
 
             Console.WriteLine(sw.Elapsed.TotalSeconds);
-            Console.WriteLine($"{Math.Round(testCount / sw.Elapsed.TotalSeconds, 0)} request per second");
+            Console.WriteLine($"{Math.Round(testCount / sw.Elapsed.TotalSeconds, 0)} request per task/second (4 queues, 4 pair prod/cons)" + "\n");
         }
 
         /// <summary>
@@ -483,7 +485,117 @@ namespace Benchmark
             sw.Stop();
 
             Console.WriteLine(sw.Elapsed.TotalSeconds);
-            Console.WriteLine($"{Math.Round(testCount / sw.Elapsed.TotalSeconds, 0)} request per second");
+            Console.WriteLine($"{Math.Round(testCount / sw.Elapsed.TotalSeconds, 0)} request per task/second (1 queues, 4 pair prod/cons)" + "\n");
+        }
+
+        /// <summary>
+        /// NO DRY CODE
+        /// Нагрузочный тест на 4х разных очередях, перекладывает из одной в другую
+        /// </summary>
+        static void HalfLoadInTurnBenchmarkThree()
+        {
+            int testCount = 10000000 * C;
+            int bufferSize = 10000;
+            var q1 = new RingBuffer.Queue<long>(bufferSize);
+            var cq1 = new RingBuffer.ConcurrentQueue<long>(q1);
+            var q2 = new RingBuffer.Queue<long>(bufferSize);
+            var cq2 = new RingBuffer.ConcurrentQueue<long>(q1);
+            var q3 = new RingBuffer.Queue<long>(bufferSize);
+            var cq3 = new RingBuffer.ConcurrentQueue<long>(q1);
+            var q4 = new RingBuffer.Queue<long>(bufferSize);
+            var cq4 = new RingBuffer.ConcurrentQueue<long>(q1);
+            Stopwatch sw = new();
+            sw.Start();
+
+            var consumer = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    while (!cq1.TryEnq(i))
+                    {
+                    }
+                }
+            });
+
+            var producerAndConsumer1 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    long j;
+                    while (!cq1.TryDeq(out j))
+                    {
+                    }
+
+                    while (!cq2.TryEnq(j))
+                    {
+                    }
+
+                    if (j != i)
+                    {
+                        throw new Exception("ERROR1");
+                    }
+                }
+            });
+            var producerAndConsumer2 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    long j;
+                    while (!cq2.TryDeq(out j))
+                    {
+                    }
+
+                    while (!cq3.TryEnq(j))
+                    {
+                    }
+
+                    if (j != i)
+                    {
+                        throw new Exception("ERROR2");
+                    }
+                }
+            });
+            var producerAndConsumer3 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    long j;
+                    while (!cq3.TryDeq(out j))
+                    {
+                    }
+
+                    while (!cq4.TryEnq(j))
+                    {
+                    }
+
+                    if (j != i)
+                    {
+                        throw new Exception("ERROR3");
+                    }
+                }
+            });
+            var producerAndConsumer4 = Task.Run(() =>
+            {
+                for (long i = 0; i < testCount; i++)
+                {
+                    long j;
+                    while (!cq4.TryDeq(out j))
+                    {
+                    }
+
+                    if (j != i)
+                    {
+                        throw new Exception("ERROR4");
+                    }
+                }
+            });
+
+            Task.WaitAll(new[] { consumer, producerAndConsumer1, producerAndConsumer2, producerAndConsumer3, producerAndConsumer4 });
+
+            sw.Stop();
+
+            Console.WriteLine(sw.Elapsed.TotalSeconds);
+            Console.WriteLine($"{Math.Round(testCount / sw.Elapsed.TotalSeconds, 0)} request per second (4 queues, 1 => 2 => 3 => 4 prod/cons scheme)");
         }
     }
 }

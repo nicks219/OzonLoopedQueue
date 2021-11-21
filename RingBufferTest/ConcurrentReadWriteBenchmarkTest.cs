@@ -15,14 +15,14 @@ namespace RingBuffer
         [DataRow(10000000, 100)]
         [DataRow(10000000, 1)]
         [DataRow(10000, 100000)]
-        public void BenchmarkOne(int testCount, int bufferSize)
+        public void StatisticsBenchmarkOne(int testCount, int bufferSize)
         {
             // Проблема: не вычитывается последний блок коллекции, решено "костылём"
             // Лямбды с замыканиями (в т.ч. вызывается метод с итератором), потому постоянно аллоцируется память
             // Тестируется метод TryDeqAllLazy()
 
             int number = 0;
-            int deqYieldCount = 0;
+            int deqPartsCount = 0;
             int enqFaults = 0;
             var q = new RingBuffer.Queue<long>(bufferSize);
             var cq = new RingBuffer.ConcurrentQueue<long>(q);
@@ -66,7 +66,7 @@ namespace RingBuffer
                         listDeq.Add(a);
                         i++;
                     }
-                    deqYieldCount++;
+                    deqPartsCount++;
                 }
             });
 
@@ -168,7 +168,7 @@ namespace RingBuffer
         [DataRow(10000000, 1)]
         [DataRow(10000, 100000)]
         [DataRow(30000000, 10000)]
-        public void BenchmarkThree(int testCount, int bufferSize)
+        public void StatisticsBenchmarkThree(int testCount, int bufferSize)
         {
             // В тесте убраны замыкания из лямбд
             // Тестируется TryDeqAll() без итератора
@@ -224,7 +224,7 @@ namespace RingBuffer
             var consumer = Task.Run(() =>
             {
                 List<long> listDeq = new(testCount);
-                int deqYieldCount = 0;
+                int deqPartsCount = 0;
 
                 for (int i = 0; i < testCount; i++)
                 {
@@ -234,14 +234,14 @@ namespace RingBuffer
 
                     i += initialCount - listDeq.Count;
 
-                    deqYieldCount++;
+                    deqPartsCount++;
                 }
-                return (listDeq, deqYieldCount);
+                return (listDeq, deqPartsCount);
             });
 
             int enqFaults = producer.Result.enqFaults;
             int write = producer.Result.write;
-            int deqYieldCount = consumer.Result.deqYieldCount;
+            int deqPartsCount = consumer.Result.deqPartsCount;
             listEnq = producer.Result.listEnq;
             listDeq = consumer.Result.listDeq;
 
